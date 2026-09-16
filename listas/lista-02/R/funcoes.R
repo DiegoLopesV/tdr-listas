@@ -40,7 +40,12 @@ desenhar_dispersao <- function(dados, modelo, caminho) {
     main = "Temperatura em função do vento — New York, 1973",
     pch = 19, col = "#2c7bb6"
   )
-  abline(modelo, col = "#d7191c", lwd = 2)
+  abline(modelo, col = "red", lwd = 2)
   dev.off()
+  caminho
+}
+
+exportar_medias <- function(medias, caminho) {
+  write.csv(medias, caminho, row.names = FALSE)
   caminho
 }
