@@ -1,0 +1,8 @@
+Coluna: Ozone
+Observações: 153
+Valores NA: 37
+mes 5: media 23.6 em 26 dias
+mes 6: media 29.4 em 9 dias
+mes 7: media 59.1 em 26 dias
+mes 8: media 60.0 em 26 dias
+mes 9: media 31.4 em 29 dias
