@@ -1,0 +1,34 @@
+---
+title: "Temperatura e Vento em Nova York"
+author: "Diego Lopes Vieira"
+lang: pt-BR
+format:
+  html:
+    embed-resources: true
+---
+
+```{r}
+#| label: carrega
+#| echo: false
+targets::tar_load(c(dados, medias, modelo, figura))
+```
+
+O conjunto de dados contém `r nrow(dados)` observações diárias. As médias calculadas para cada mês estão dispostas na @tbl-medias.
+
+```{r}
+#| label: tbl-medias
+#| echo: false
+#| tbl-cap: "Médias mensais de temperatura (°F) e velocidade do vento (mph)."
+knitr::kable(medias)
+```
+
+O modelo linear simples foi ajustado a partir de `r nobs(modelo)` observações válidas, apresentando um coeficiente de determinação $R^2$ de `r round(summary(modelo)$r.squared, 3)` e inclinação de `r round(coef(modelo)[2], 2)`. A relação e a reta ajustada podem ser vistas na @fig-dispersao.
+
+```{r}
+#| label: fig-dispersao
+#| echo: false
+#| fig-cap: "Dispersão da temperatura em função do vento com a reta ajustada."
+knitr::include_graphics(here::here(figura))
+```
+
+A análise aponta uma associação linear negativa entre a velocidade do vento e a temperatura observada no período de maio a setembro de 1973 em Nova York. Em dias com ventos mais intensos, nota-se uma tendência moderada de queda na temperatura ambiente.

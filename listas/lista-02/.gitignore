@@ -1,0 +1,19 @@
+# Armazenamento interno do targets
+_targets/
+
+# Diretório de saídas geradas pelo pipeline
+saidas/
+
+# Relatório renderizado (HTML)
+relatorio.html
+
+# Cache do Quarto / knitr
+*_cache/
+*_files/
+
+# Arquivos que uma sessão de R deixa para trás
+.Rhistory
+.RData
+.RDataTmp
+.Ruserdata
+.Rproj
