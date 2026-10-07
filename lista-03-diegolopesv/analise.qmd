@@ -97,3 +97,36 @@ str(geracao_2023_longa)
 data.frame(linhas = linhas, valores_ausentes = ausentes)
 knitr::kable(geracao_2023_longa, caption = "Energia mensal em 2023 (MWh)")
 ```
+
+# Exercício 3 — Juntar ao cadastro
+
+A junção à esquerda mantém cada par de usina e mês da tabela longa e acrescenta as informações do cadastro. Cada código da tabela longa deve encontrar no máximo uma linha no cadastro.
+
+```{r}
+geracao_2023_cadastro <- geracao_2023_longa |>
+  dplyr::left_join(cadastro, by = "codigo", relationship = "many-to-one") |>
+  dplyr::mutate(energia_mwh_por_kwp = energia_mwh / potencia_kwp)
+
+linhas_antes <- nrow(geracao_2023_longa)
+linhas_depois <- nrow(geracao_2023_cadastro)
+
+stopifnot(
+  linhas_antes == linhas_depois,
+  linhas_depois == 132,
+  !anyNA(geracao_2023_cadastro$nome),
+  !anyNA(geracao_2023_cadastro$potencia_kwp)
+)
+
+data.frame(linhas_antes = linhas_antes, linhas_depois = linhas_depois)
+knitr::kable(geracao_2023_cadastro, caption = "Energia mensal e porte das usinas em 2023")
+```
+
+A junção filtrante abaixo encontra no cadastro a usina sem qualquer medição em 2023.
+
+```{r}
+sem_medicao <- cadastro |>
+  dplyr::anti_join(geracao_2023_longa, by = "codigo")
+
+stopifnot(nrow(sem_medicao) == 1)
+knitr::kable(sem_medicao[, c("codigo", "nome")])
+```
