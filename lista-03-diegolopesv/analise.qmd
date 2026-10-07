@@ -168,3 +168,97 @@ knitr::kable(resumo_categoria, digits = 4, caption = "Resumo por categoria em 20
 ```
 
 O total registrado em 2023 foi de `r format(sum(resumo_categoria$total_ano_mwh), big.mark = ".", decimal.mark = ",", nsmall = 1)` MWh.
+
+# Exercício 5 — Todos os anos de uma vez
+
+Foram selecionados apenas os arquivos cujo nome segue o padrão `geracao_aaaa.csv`. A cadeia anterior continuou válida porque os meses já eram selecionados explicitamente; foi necessário apenas preservar `origem` e `ano` e incluir `ano` no agrupamento final.
+
+```{r}
+arquivos_anuais <- list.files(
+  "dados",
+  pattern = "^geracao_[0-9]{4}\\.csv$",
+  full.names = TRUE
+) |>
+  sort()
+arquivos_anuais <- stats::setNames(arquivos_anuais, basename(arquivos_anuais))
+
+geracao_anos <- arquivos_anuais |>
+  purrr::map(\(arquivo) {
+    read_delim(
+      arquivo,
+      delim = ";",
+      locale = locale(decimal_mark = ",", encoding = "UTF-8"),
+      na = "-",
+      col_types = cols(
+        codigo = col_character(),
+        jan = col_double(), fev = col_double(), mar = col_double(),
+        abr = col_double(), mai = col_double(), jun = col_double(),
+        jul = col_double(), ago = col_double(), set = col_double(),
+        out = col_double(), nov = col_double(), dez = col_double()
+      ),
+      show_col_types = FALSE
+    )
+  }) |>
+  dplyr::bind_rows(.id = "origem") |>
+  dplyr::mutate(ano = parse_number(origem))
+
+geracao_empilhada <- geracao_anos |>
+  tidyr::pivot_longer(
+    cols = dplyr::all_of(meses),
+    names_to = "mes",
+    values_to = "energia_mwh"
+  ) |>
+  dplyr::mutate(mes = forcats::fct_relevel(mes, meses)) |>
+  dplyr::left_join(cadastro, by = "codigo", relationship = "many-to-one") |>
+  dplyr::mutate(energia_mwh_por_kwp = energia_mwh / potencia_kwp)
+
+conferencia_anos <- geracao_empilhada |>
+  dplyr::group_by(ano) |>
+  dplyr::summarise(
+    meses_sem_registro = sum(is.na(energia_mwh)),
+    soma_valores_registrados = sum(energia_mwh, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+tabela_apresentacao <- geracao_empilhada |>
+  dplyr::group_by(estrutura, ano) |>
+  dplyr::summarise(
+    total_ano_mwh = sum(energia_mwh, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  tidyr::pivot_wider(
+    names_from = ano,
+    values_from = total_ano_mwh
+  )
+
+somas_apresentacao <- tabela_apresentacao |>
+  dplyr::summarise(dplyr::across(-estrutura, sum))
+
+stopifnot(
+  length(arquivos_anuais) == 3,
+  nrow(geracao_anos) == 33,
+  nrow(geracao_empilhada) == 3 * nrow(geracao_2023_longa),
+  nrow(geracao_empilhada) == 396,
+  identical(conferencia_anos$meses_sem_registro, c(5L, 2L, 5L)),
+  isTRUE(all.equal(
+    conferencia_anos$soma_valores_registrados,
+    c(14253.2, 13765.3, 12808.7)
+  )),
+  isTRUE(all.equal(
+    unname(unlist(somas_apresentacao)),
+    c(14253.2, 13765.3, 12808.7)
+  ))
+)
+
+knitr::kable(
+  geracao_empilhada,
+  caption = "Tabela empilhada dos três anos"
+)
+knitr::kable(conferencia_anos, digits = 1, caption = "Conferência por ano")
+knitr::kable(somas_apresentacao, digits = 1, caption = "Somas das colunas")
+knitr::kable(
+  tabela_apresentacao,
+  digits = 1,
+  caption = "Total de cada categoria em cada ano (MWh)"
+)
+```
