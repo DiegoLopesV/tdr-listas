@@ -62,3 +62,38 @@ str(geracao_2023)
 knitr::kable(cadastro, caption = "Cadastro das 12 usinas")
 knitr::kable(geracao_2023, caption = "Valores mensais das 11 usinas em 2023 (MWh)")
 ```
+
+# Exercício 2 — Arrumar a tabela
+
+Cada coluna de mês da tabela anual passa a ser um valor da coluna `mes`. A coluna `energia_mwh` guarda a energia gerada pela usina naquele mês. Os níveis do fator seguem janeiro a dezembro.
+
+```{r}
+meses <- c(
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez"
+)
+
+geracao_2023_longa <- geracao_2023 |>
+  tidyr::pivot_longer(
+    cols = dplyr::all_of(meses),
+    names_to = "mes",
+    values_to = "energia_mwh"
+  ) |>
+  dplyr::mutate(mes = forcats::fct_relevel(mes, meses))
+
+linhas <- nrow(geracao_2023_longa)
+ausentes <- sum(is.na(geracao_2023_longa$energia_mwh))
+
+stopifnot(
+  ncol(geracao_2023_longa) == 3,
+  linhas == nrow(geracao_2023) * 12,
+  linhas == 132,
+  ausentes == 5,
+  is.factor(geracao_2023_longa$mes),
+  identical(levels(geracao_2023_longa$mes), meses)
+)
+
+str(geracao_2023_longa)
+data.frame(linhas = linhas, valores_ausentes = ausentes)
+knitr::kable(geracao_2023_longa, caption = "Energia mensal em 2023 (MWh)")
+```
