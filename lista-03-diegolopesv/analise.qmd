@@ -130,3 +130,41 @@ sem_medicao <- cadastro |>
 stopifnot(nrow(sem_medicao) == 1)
 knitr::kable(sem_medicao[, c("codigo", "nome")])
 ```
+
+# Exercício 4 — Resumir por grupo
+
+Um mês sem registro representa uma medição desconhecida, não geração zero. Por isso, os valores ausentes continuam como `NA` e são excluídos das médias mensais. Essa decisão afeta as médias relativas e a contagem de meses com registro; não afeta os totais anuais, que somam apenas os valores registrados.
+
+```{r}
+resumo_unidade <- geracao_2023_cadastro |>
+  dplyr::group_by(codigo, nome, estrutura) |>
+  dplyr::summarise(
+    meses_com_registro = sum(!is.na(energia_mwh)),
+    total_ano_mwh = sum(energia_mwh, na.rm = TRUE),
+    media_mensal_mwh_por_kwp = mean(energia_mwh_por_kwp, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  dplyr::arrange(dplyr::desc(media_mensal_mwh_por_kwp))
+
+resumo_categoria <- geracao_2023_cadastro |>
+  dplyr::group_by(estrutura) |>
+  dplyr::summarise(
+    unidades = dplyr::n_distinct(codigo),
+    total_ano_mwh = sum(energia_mwh, na.rm = TRUE),
+    media_mensal_mwh_por_kwp = mean(energia_mwh_por_kwp, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+stopifnot(
+  nrow(resumo_unidade) == 11,
+  sum(resumo_unidade$meses_com_registro) == 127,
+  sum(resumo_categoria$unidades) == 11,
+  isTRUE(all.equal(sum(resumo_unidade$total_ano_mwh), 14253.2)),
+  isTRUE(all.equal(sum(resumo_categoria$total_ano_mwh), 14253.2))
+)
+
+knitr::kable(resumo_unidade, digits = 4, caption = "Resumo por usina em 2023")
+knitr::kable(resumo_categoria, digits = 4, caption = "Resumo por categoria em 2023")
+```
+
+O total registrado em 2023 foi de `r format(sum(resumo_categoria$total_ano_mwh), big.mark = ".", decimal.mark = ",", nsmall = 1)` MWh.
