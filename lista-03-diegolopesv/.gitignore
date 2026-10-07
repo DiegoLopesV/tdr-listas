@@ -1,0 +1,18 @@
+# Saídas do Quarto
+analise.html
+analise_files/
+analise_cache/
+*.utf8.md
+*.knit.md
+
+# Arquivos de sessão do R
+.Rhistory
+.Rapp.history
+.RData
+.RDataTmp
+.Ruserdata
+.Rproj.user/
+
+# Biblioteca local usada para executar o documento
+.r-lib/
+.quarto-local/

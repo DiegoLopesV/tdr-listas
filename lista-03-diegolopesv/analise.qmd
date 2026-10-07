@@ -1,0 +1,64 @@
+---
+title: "Energia gerada pelas usinas solares de uma cooperativa"
+author: "Diego Lopes Vieira"
+lang: pt-BR
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: true
+---
+
+# Exercício 1 — O documento e a leitura
+
+O `LEIA-ME.txt` informa que cada linha dos arquivos anuais representa uma usina, que a energia mensal está em MWh e que `-` significa mês sem registro. Há 12 unidades no cadastro e 11 com medições.
+
+Antes da leitura no R, examinei os arquivos no terminal com `Get-Content -TotalCount 4 dados/cadastro.csv`, `Get-Content -TotalCount 4 dados/geracao_2023.csv` e `Format-Hex -Path dados/cadastro.csv`. Ambos usam `;` como separador de campos. No arquivo anual, `54,0` confirma a vírgula decimal, e `-` aparece em meses sem registro. No cadastro, o byte `E1` em *Maringá* identifica a codificação Windows-1252; os dados do arquivo anual são ASCII, compatíveis com UTF-8.
+
+```{r}
+library(readr)
+Sys.setlocale("LC_CTYPE", "")
+
+cadastro <- read_delim(
+  "dados/cadastro.csv",
+  delim = ";",
+  locale = locale(decimal_mark = ",", encoding = "Windows-1252"),
+  na = "-",
+  col_types = cols(
+    codigo = col_character(),
+    nome = col_character(),
+    estrutura = col_character(),
+    potencia_kwp = col_double()
+  ),
+  show_col_types = FALSE
+)
+
+geracao_2023 <- read_delim(
+  "dados/geracao_2023.csv",
+  delim = ";",
+  locale = locale(decimal_mark = ",", encoding = "UTF-8"),
+  na = "-",
+  col_types = cols(
+    codigo = col_character(),
+    jan = col_double(), fev = col_double(), mar = col_double(),
+    abr = col_double(), mai = col_double(), jun = col_double(),
+    jul = col_double(), ago = col_double(), set = col_double(),
+    out = col_double(), nov = col_double(), dez = col_double()
+  ),
+  show_col_types = FALSE
+)
+
+stopifnot(
+  nrow(cadastro) == 12,
+  nrow(geracao_2023) == 11,
+  ncol(geracao_2023) == 13,
+  is.character(geracao_2023$codigo),
+  all(vapply(geracao_2023[-1], is.double, logical(1))),
+  sum(is.na(geracao_2023[-1])) == 5,
+  isTRUE(all.equal(sum(unlist(geracao_2023[-1]), na.rm = TRUE), 14253.2))
+)
+
+str(geracao_2023)
+knitr::kable(cadastro, caption = "Cadastro das 12 usinas")
+knitr::kable(geracao_2023, caption = "Valores mensais das 11 usinas em 2023 (MWh)")
+```
